@@ -34,6 +34,7 @@
     <li class="nav-item"><a class="nav-link" href="/signup">Sign up</a></li>
     {% if user != None %}
       <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
+      <li class="nav-item"><a class="nav-link" href="/change_password">Change password</a></li>
     {% else %}
     {% endif %}
     <li class="nav-item"><a class="nav-link" href="#" style="position: fixed; right: 10;">{{ user if user is not none }}</a></li>
