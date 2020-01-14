@@ -19,3 +19,13 @@ class SignUpForm(FlaskForm):
     password = PasswordField('Password', validators=[InputRequired()])
     confirm_password = PasswordField('Confirm password', validators=[InputRequired()])
     signup = SubmitField('Sign up')
+
+
+class ChangeForm(FlaskForm):
+    old_password = PasswordField('Old_password', validators=[InputRequired()])
+    new_password = PasswordField('New_password', validators=[InputRequired()])
+    confirm_password = PasswordField('Confirm_password', validators=[InputRequired()])
+
+
+class FilterForm(FlaskForm):
+    filter = StringField('Filter name')

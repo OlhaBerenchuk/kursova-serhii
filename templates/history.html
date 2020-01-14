@@ -1,4 +1,6 @@
 {% include "header.html" %}
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
 {% block body %}
 
@@ -11,6 +13,12 @@
     </ul>
   {% endif %}
 {% endwith %}
+
+<form action="/history" enctype=multipart/form-data method="post">
+    {{ form.csrf_token }}
+    {{ wtf.form_field(form.filter) }}
+    <input class="btn btn-primary" type=submit value="Filter it">
+</form>
 
 <table class="table table-striped">
     <tbody>

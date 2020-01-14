@@ -10,7 +10,7 @@ from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
 
-from forms import UploadForm, SignUpForm, LogInForm
+from forms import UploadForm, SignUpForm, LogInForm, ChangeForm, FilterForm
 
 ALLOWED_EXTENSIONS = {'py'}
 
@@ -138,7 +138,6 @@ def signup():
             if is_password_correct(password, confirm_password):
                 try:
                     user = User(user_email=email, user_username=username, user_password=password)
-                    db.session.add(user)
                     db.session.commit()
                 except Exception as e:
                     print(e)
@@ -201,12 +200,20 @@ def documentation():
     return render_template('notlogin.html', user=None)
 
 
-@app.route('/history', methods=['GET'])
+@app.route('/history', methods=['GET', 'POST'])
 def history():
     if session.get('username'):
         result = list()
+        form = FilterForm()
         user = User.query.filter_by(user_email=session.get('username')).first()
-        files = File.query.filter_by(user_id=user.id).all()
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                filter_name = str(form.filter.data)
+                files = File.query.filter_by(user_id=user.id, file_name=filter_name).all()
+            else:
+                files = []
+        else:
+            files = File.query.filter_by(user_id=user.id).all()
         for file in files:
             doc = Documentation.query.filter_by(file_id=file.id).first()
             if doc is not None:
@@ -215,7 +222,7 @@ def history():
                 res.append(file.upload_time)
                 res.append(doc.documentation_name)
                 result.append(res)
-        return render_template('history.html', rows=result, user=session.get('username'))
+        return render_template('history.html', rows=result, user=session.get('username'), form=form)
     return redirect(url_for('anywhere'))
 
 
@@ -259,6 +266,34 @@ def send_mail_by_filename():
                     return redirect(url_for('history'))
         return render_template('notlogin.html', user=None)
     return redirect('/documentation')
+
+
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if session.get('username'):
+        form = ChangeForm()
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                old_password = sha256_decode(form.old_password.data)
+                user = User.query.filter_by(user_email=session.get('username')).first()
+                actual_password = user.user_password
+                new_password = sha256_decode(form.new_password.data)
+                confirm_password = sha256_decode(form.confirm_password.data)
+                if is_password_correct(new_password, confirm_password) and \
+                    is_password_correct(old_password, actual_password):
+                    try:
+                        user.user_password = new_password
+                        db.session.add(user)
+                        db.session.commit()
+                    except Exception:
+                        return render_template('error.html', message='Oops. Something is wrong!',
+                                               user=session.get('username'))
+                    return redirect(url_for('login'))
+                else:
+                    return render_template('error.html', message='Are you sure that password is right?')
+            return render_template('error.html', message='Form is not valid', user=session.get('username'))
+        return render_template('change.html', user=session.get('username'), form=form)
+    return redirect(url_for('anywhere'))
 
 
 @app.route('/<path:path>')
