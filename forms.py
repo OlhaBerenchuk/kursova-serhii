@@ -1,10 +1,11 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, FileField, StringField, PasswordField, SubmitField
+from wtforms import FileField, StringField, PasswordField, SubmitField, SelectField
 from wtforms.validators import InputRequired, Email
 
 
 class UploadForm(FlaskForm):
     file = FileField(validators=[InputRequired()])
+    projects = SelectField('Project', coerce=int, validators=[InputRequired()])
 
 
 class LogInForm(FlaskForm):
@@ -18,7 +19,8 @@ class SignUpForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired()])
     password = PasswordField('Password', validators=[InputRequired()])
     confirm_password = PasswordField('Confirm password', validators=[InputRequired()])
-    signup = SubmitField('Sign up')
+    companies = SelectField('Company', coerce=int, validators=[InputRequired()])
+    secret_key = PasswordField('Secret company key', validators=[InputRequired()])
 
 
 class ChangeForm(FlaskForm):
@@ -29,3 +31,18 @@ class ChangeForm(FlaskForm):
 
 class FilterForm(FlaskForm):
     filter = StringField('Filter name')
+
+
+class CompanyForm(FlaskForm):
+    name = StringField('Name of company', validators=[InputRequired()])
+    secret_key = StringField('Secret key', validators=[InputRequired()])
+    website = StringField('Website')
+    email = StringField('Email', validators=[InputRequired(), Email()])
+    username = StringField('Username', validators=[InputRequired()])
+    password = PasswordField('Password', validators=[InputRequired()])
+    confirm_password = PasswordField('Confirm password', validators=[InputRequired()])
+
+
+class ProjectForm(FlaskForm):
+    name = StringField('Name of project', validators=[InputRequired()])
+    description = StringField('Description')

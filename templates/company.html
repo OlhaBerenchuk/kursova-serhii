@@ -4,18 +4,20 @@
 
 {% block body %}
 
-<form action="/signup" enctype=multipart/form-data method="post">
+<form action="/create_company" enctype=multipart/form-data method="post">
     {{ form.csrf_token }}
+    <h3>Your info:</h3>
     {{ wtf.form_field(form.email) }}
     {{ wtf.form_field(form.username) }}
     {{ wtf.form_field(form.password) }}
     {{ wtf.form_field(form.confirm_password) }}
-    {{ wtf.form_field(form.companies) }}
+    <h3>Company info:</h3>
+    {{ wtf.form_field(form.name) }}
+    {{ wtf.form_field(form.website) }}
     {{ wtf.form_field(form.secret_key) }}
     <input class="btn btn-primary" type=submit value="Sign up">
 </form>
 
-<h6>*Ask your boss for company secret key!</h6>
-<h6>**If you want to create own company, click <a href="/create_company">here</a>.</h6>
+<h6>*Generate your company secret key for future employees!</h6>
 
 {% endblock %}

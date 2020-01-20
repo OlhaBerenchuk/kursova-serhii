@@ -5,16 +5,12 @@
 {% block body %}
 
 <div class="center">
-    {% if user != None %}
-        <form method=post enctype=multipart/form-data>
-            {{ form.csrf_token }}
-            {{ wtf.form_field(form.file) }}
-            <input class="btn btn-primary" type=submit value=Upload>
-        </form>
-    {% endif %}
-    {% if user == None %}
-        <p>You need to log in our system.</p>
-    {% endif %}
+    <form method=post enctype=multipart/form-data>
+        {{ form.csrf_token }}
+        {{ wtf.form_field(form.file) }}
+        {{ wtf.form_field(form.projects) }}
+        <input class="btn btn-primary" type=submit value=Upload>
+    </form>
 </div>
 
 {% endblock %}

@@ -14,12 +14,12 @@ class User(db.Model):
 
     __tablename__ = 'orm_user'
 
-    id = db.Column(db.Integer, primary_key=True)
     user_email = db.Column(db.String(45), nullable=False)
-    user_username = db.Column(db.String(45), nullable=False)
+    user_username = db.Column(db.String(45), primary_key=True)
     user_password = db.Column(db.String(64), nullable=False)
+    is_owner = db.Column(db.Boolean, default=False)
 
-    files = db.relationship('File')
+    company_id = db.Column(db.Integer, db.ForeignKey('orm_company.id'))
 
 
 class File(db.Model):
@@ -29,31 +29,34 @@ class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     file_name = db.Column(db.String(45), nullable=False)
     upload_time = db.Column(db.String(100), nullable=False)
+    documentation = db.Column(db.String(45))
 
-    language_id = db.Column(db.Integer, db.ForeignKey('orm_language.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('orm_user.id'))
-
-
-class Language(db.Model):
-
-    __tablename__ = 'orm_language'
-
-    id = db.Column(db.Integer, primary_key=True)
-    language_name = db.Column(db.String(45), nullable=False)
-    language_version = db.Column(db.String(20), nullable=False)
-    language_release_date = db.Column(db.String(45), nullable=False)
-
-    files = db.relationship('File')
+    user_username = db.Column(db.String(45), db.ForeignKey('orm_user.user_username'))
+    project_id = db.Column(db.Integer, db.ForeignKey('orm_project.id'))
 
 
-class Documentation(db.Model):
+class Company(db.Model):
 
-    __tablename__ = 'orm_documentation'
+    __tablename__ = 'orm_company'
 
     id = db.Column(db.Integer, primary_key=True)
-    documentation_name = db.Column(db.String(100), nullable=False)
+    company_name = db.Column(db.String(100), nullable=False, unique=True)
+    website = db.Column(db.String(100))
+    secret_key = db.Column(db.String(100))
 
-    file_id = db.Column(db.Integer, db.ForeignKey('orm_file.id'))
+    projects = db.relationship('Project')
+    users = db.relationship('User')
+
+
+class Project(db.Model):
+
+    __tablename__ = 'orm_project'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(100))
+
+    company_id = db.Column(db.Integer, db.ForeignKey('orm_company.id'))
 
 
 db.create_all()
