@@ -1,0 +1,14 @@
+{% include "header.html" %}
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block body %}
+
+<form action="/create_project" enctype=multipart/form-data method="post">
+    {{ form.csrf_token }}
+    {{ wtf.form_field(form.name) }}
+    {{ wtf.form_field(form.description) }}
+    <input class="btn btn-primary" type=submit value="Create">
+</form>
+
+{% endblock %}

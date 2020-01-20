@@ -5,7 +5,7 @@ import codecs
 
 from hashlib import sha256
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
@@ -210,7 +210,6 @@ def documentation():
                 db.session.add(file)
                 db.session.commit()
                 return html
-        print(form.errors)
         return render_template('error.html', message='Not valid form!', user=current_user.user_username)
     return render_template('documentation.html', user=current_user.user_username, form=form)
 
@@ -218,105 +217,129 @@ def documentation():
 @app.route('/history', methods=['GET', 'POST'])
 @login_required
 def history():
-    result = list()
     form = FilterForm()
     if request.method == 'POST':
+        if form.filter.data == '':
+            return redirect('/history')
         if form.validate_on_submit():
             filter_name = str(form.filter.data)
+            result = list()
             projects = Project.query.filter_by(company_id=current_user.company_id).all()
             for project in projects:
-                p = list(project.project_name)
+                q = list()
                 files = File.query.filter_by(
-                    user_username=current_user.user_username,
                     project_id=project.id,
                     file_name=filter_name
                 ).all()
-                for file in files:
-                    p.append(file.file_name)
-                    p.append(file.upload_time)
-                    p.append(documentation)
-                    result.append(p)
+                if files:
+                    for file in files:
+                        p = list()
+                        p.append(file.file_name)
+                        p.append(file.upload_time)
+                        p.append(file.documentation)
+                        p.append(file.user_username)
+                        q.append(p)
+                    result.append({"name": project.project_name, "value": q})
         else:
             result = []
     else:
+        result = list()
         projects = Project.query.filter_by(company_id=current_user.company_id).all()
         for project in projects:
-            p = list(project.project_name)
+            q = list()
             files = File.query.filter_by(
                 user_username=current_user.user_username,
                 project_id=project.id
             ).all()
-            for file in files:
-                p.append(file.file_name)
-                p.append(file.upload_time)
-                p.append(documentation)
-                result.append(p)
-    return render_template('history.html', rows=result, user=current_user.user_username, form=form)
+            if files:
+                for file in files:
+                    p = list()
+                    p.append(file.file_name)
+                    p.append(file.upload_time)
+                    p.append(file.documentation)
+                    p.append(file.user_username)
+                    q.append(p)
+                result.append({"name": project.project_name, "value": q})
+    return render_template('history.html', items=result, user=current_user.user_username, form=form)
 
 
-# @app.route('/get_doc_by_filename', methods=['POST', 'GET'])
-# @login_required
-# def get_doc_by_filename():
-#     if request.method == 'POST':
-#         filename = request.form['filename_by_get']
-#         path = os.path.abspath('templates')
-#         f = codecs.open((os.path.join(path, f'{filename}.html')), 'r')
-#         html = f.read()
-#         return html
-#     return redirect('/documentation')
+@app.route('/get_doc_by_filename', methods=['POST', 'GET'])
+@login_required
+def get_doc_by_filename():
+    if request.method == 'POST':
+        filename = request.form['filename_by_get']
+        path = os.path.abspath('templates')
+        f = codecs.open((os.path.join(path, f'{filename}.html')), 'r')
+        html = f.read()
+        return html
+    return redirect('/documentation')
 
 
-# @app.route('/send_mail_by_filename', methods=['POST', 'GET'])
-# @login_required
-# def send_mail_by_filename():
-#     if request.method == 'POST':
-#         filename = request.form['filename_by_send']
-#         path = os.path.abspath('templates')
-#         try:
-#             f = codecs.open((os.path.join(path, f'{filename}.html')), 'r')
-#             html = f.read()
-#         except Exception as e:
-#             print(e)
-#             return render_template('error.html', user=current_user.user_username, message='File does not exist!')
-#         else:
-#             try:
-#                 msg = Message(f"Your documentation", sender="kpistudydb@gmail.com",
-#                               recipients=[current_user.user_email])
-#                 msg.html = html
-#                 mail.send(msg)
-#             except Exception as e:
-#                 print(e)
-#                 return render_template('error.html', message='Document was not sent, sorry!',
-#                                        user=current_user.user_username)
-#             else:
-#                 return redirect(url_for('history'))
-#     return redirect('/documentation')
+@app.route('/send_mail_by_filename', methods=['POST', 'GET'])
+@login_required
+def send_mail_by_filename():
+    if request.method == 'POST':
+        filename = request.form['filename_by_send']
+        path = os.path.abspath('templates')
+        try:
+            f = codecs.open((os.path.join(path, f'{filename}.html')), 'r')
+            html = f.read()
+        except Exception as e:
+            print(e)
+            return render_template('error.html', user=current_user.user_username, message='File does not exist!')
+        else:
+            try:
+                msg = Message(f"Your documentation", sender="kpistudydb@gmail.com",
+                              recipients=[current_user.user_email])
+                msg.html = html
+                mail.send(msg)
+            except Exception as e:
+                print(e)
+                return render_template('error.html', message='Document was not sent, sorry!',
+                                       user=current_user.user_username)
+            else:
+                return redirect(url_for('history'))
+    return redirect('/documentation')
 
 
-# @app.route('/change_password', methods=['GET', 'POST'])
-# @login_required
-# def change_password():
-#     form = ChangeForm()
-#     if request.method == 'POST':
-#         if form.validate_on_submit():
-#             old_password = sha256(str(form.old_password.data).encode('utf-8')).hexdigest()
-#             new_password = sha256(str(form.new_password.data).encode('utf-8')).hexdigest()
-#             confirm_password = sha256(str(form.confirm_password.data).encode('utf-8')).hexdigest()
-#             if confirm_password != new_password:
-#                 return render_template('error.html', message='Password was not confirmed!',
-#                                        user=current_user.user_username)
-#             if old_password != current_user.user_password:
-#                 return render_template('error.html', message='Old password is wrong!')
-#             try:
-#                 current_user.user_password = new_password
-#                 db.session.add(current_user)
-#                 db.session.commit()
-#             except Exception:
-#                 return render_template('error.html', message='Oops. Something is wrong!',
-#                                        user=current_user.user_username)
-#             return redirect(url_for('login'))
-#         return render_template('error.html', message='Form is not valid', user=current_user.user_username)
-#     return redirect(url_for('anywhere'))
+@app.route('/delete_documentation', methods=['POST'])
+@login_required
+def delete_documentation():
+    if request.method == 'POST':
+        filename = request.form['filename_by_delete']
+        project_name = request.form['project_name']
+        project = Project.query.filter_by(company_id=current_user.company_id, project_name=project_name).first()
+        file = File.query.filter_by(documentation=filename, project_id=project.id).first()
+        db.session.delete(file)
+        db.session.commit()
+        return redirect('/history')
+    return redirect('/documentation')
+
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangeForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            old_password = sha256(str(form.old_password.data).encode('utf-8')).hexdigest()
+            new_password = sha256(str(form.new_password.data).encode('utf-8')).hexdigest()
+            confirm_password = sha256(str(form.confirm_password.data).encode('utf-8')).hexdigest()
+            if confirm_password != new_password:
+                return render_template('error.html', message='Password was not confirmed!',
+                                       user=current_user.user_username)
+            if old_password != current_user.user_password:
+                return render_template('error.html', message='Old password is wrong!')
+            try:
+                current_user.user_password = new_password
+                db.session.add(current_user)
+                db.session.commit()
+            except Exception:
+                return render_template('error.html', message='Oops. Something is wrong!',
+                                       user=current_user.user_username)
+            return redirect(url_for('login'))
+        return render_template('error.html', message='Form is not valid', user=current_user.user_username)
+    return render_template('change.html', user=current_user.user_username, form=form)
 
 
 @app.route('/create_company', methods=['POST', 'GET'])
@@ -350,11 +373,27 @@ def create_company():
     return render_template('company.html', form=form, user=None)
 
 
-# @app.route('/create_project')
-# @login_required
-# def create_project():
-#     return render_template('error.html', message='Okay! Lets make some documentation!')
-#
+@app.route('/create_project', methods=['GET', 'POST'])
+@login_required
+def create_project():
+    form = ProjectForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        name = form.name.data
+        list_of_names = [project.project_name
+                         for project in Project.query.filter_by(company_id=current_user.company_id).all()]
+        if name not in list_of_names:
+            description = form.description.data
+            project = Project()
+            project.project_name = name
+            project.description = description
+            project.company_id = current_user.company_id
+            db.session.add(project)
+            db.session.commit()
+            return render_template('error.html', message='Okay! Lets make some documentation!')
+        else:
+            return render_template('error.html', message='Project with current name exist in your company.')
+    return render_template('project.html', user=current_user.user_username, form=form)
+
 
 @app.route('/<path:path>')
 def anywhere(path):
